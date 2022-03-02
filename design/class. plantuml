@@ -1,0 +1,62 @@
+@startuml nvchunk
+left to right direction
+
+
+title NVM
+
+class Singleton<T> {
+    +instance()
+}
+class NVM {
+    -mChunks
+    -mDevs
+    +openChunk()
+    +closeChunk()
+    +getChunk()
+}
+
+class nvchunk {
+  -mFlags : uint64_t
+  -_pDev : nv_dev*
+  -mVA : void*
+  -mSize : size_t
+  +va()
+  +size()
+  +name()
+  +open()
+}
+
+class mapper<T> {
+  +operator[]
+  +operator->
+  +operator*
+}
+
+Singleton <|-- NVM
+NVM::mChunks "1" -- "*" nvchunk
+NVM::mDevs "1" -- "*" nv_dev
+nvchunk +-- mapper
+
+
+class nv_dev {
+  ~mName
+  ~mSize
+  ~mVA : uintptr_t
+  +va()
+  +size()
+  +name()
+  +static open()
+}
+class nv_filedev {
+  +open()
+}
+class nv_memdev {
+  +open()
+}
+
+nv_dev <|-- nv_filedev
+nv_dev <|-- nv_memdev
+
+nvchunk::mDev "1..*" -- "1" nv_dev
+
+@enduml

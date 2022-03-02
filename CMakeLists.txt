@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.8)
+project(nvchunk C CXX)
 
 include_directories("googletest/googletest/include/")
-add_subdirectory(googletest)
+include_directories("/opt/rh/devtoolset-9/root/usr/include/c++/9/")
 
-project(nvchunk C CXX)
+add_subdirectory(googletest)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
