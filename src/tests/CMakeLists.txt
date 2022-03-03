@@ -5,8 +5,8 @@ target_link_libraries(nvchunk_test nvchunk gtest gtest_main)       # 主文件�
 
 add_test(NAME nvchunk_test COMMAND nvchunk_test)
 
-add_custom_target(gcov ALL
-    DEPENDS nvchunk_test gcov.txt
+add_custom_target(gcov
+    DEPENDS gcov.txt
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     VERBATIM
 )
@@ -18,6 +18,7 @@ add_custom_command(OUTPUT gcov.txt
     COMMAND genhtml nvchunk.info --output-directory=res
     COMMAND echo "Generating Gcov html files in ${CMAKE_BINARY_DIR}/res"
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    DEPENDS nvchunk_test
     VERBATIM
 )
 
