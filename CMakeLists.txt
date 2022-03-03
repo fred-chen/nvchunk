@@ -12,6 +12,10 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_COMPILER /opt/rh/devtoolset-9/root/bin/cc)
 set(CMAKE_CXX_COMPILER /opt/rh/devtoolset-9/root/bin/g++)
 
+# add gcov flag
+SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} --coverage")
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} --coverage")
+
 include(CTest)
 enable_testing()
 add_subdirectory(src)

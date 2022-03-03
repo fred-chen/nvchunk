@@ -58,9 +58,7 @@ public:
      * 
      * @return int 0 if succ, else -1 with errno set
      */
-    virtual int flush(char* addr = nullptr, size_t size = 0) { 
-        return (addr && size) ? pmem_msync(addr, size) : pmem_msync(mVA, mSize); 
-    }
+    virtual int flush(char* addr = nullptr, size_t size = 0) = 0;
 
     virtual bool is_pmem(bool retest = false) {
         return retest ? pmem_is_pmem(mVA, mSize) : mIsPmem;
@@ -125,6 +123,15 @@ public:
         return true;
     }
 
+    /**
+     * @brief flush data onto persistent memory
+     *        calling pmem_persist for NVM devices (NVDIMM, Optane)
+     *        calling pmem_msync for regular file based devices
+     * 
+     * @param addr the starting address to flush
+     * @param size size of data to flush
+     * @return int 0 if succ, else -1 and errno tells why
+     */
     virtual int flush(char* addr = 0, size_t size = 0) override { 
         int rt = 0;
         if( mIsPmem ) {
@@ -177,6 +184,8 @@ public:
         /* no action taken for memory based device */
         return 0;
     }
+
+    virtual ~nv_memdev() { close(); }
 };
 
 /**
@@ -255,6 +264,15 @@ public:
         return pd;
     }
 
+    /**
+     * @brief create new chunk and map it on an existing nv_dev
+     * 
+     * @param name        name of the chunk
+     * @param dev         nv_dev backing device
+     * @param off         offset of the chunk from beginning of dev
+     * @param size        size of the chunk
+     * @return nvchunk*   a pointer to the newly created nvchunk
+     */
     nvchunk* mapChunk(const string & name, nv_dev* dev, off64_t off=0, size_t size=0) {
         nvchunk* pc;
 

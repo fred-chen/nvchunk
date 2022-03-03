@@ -52,6 +52,7 @@ TEST_F(nvchunkTest, nv_filedev) {
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_TRUE(dev->is_pmem());
+    EXPECT_EQ(0, dev->flush());
     delete dev;
     unlink(path.c_str());
 
@@ -61,6 +62,7 @@ TEST_F(nvchunkTest, nv_filedev) {
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_FALSE(dev->is_pmem());
+    EXPECT_EQ(0, dev->flush());
     delete dev;
 
     /* open existing file */
@@ -82,6 +84,8 @@ TEST_F(nvchunkTest, nv_memdev) {
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_FALSE(dev->is_pmem());
+    EXPECT_EQ(dev->flush(), 0);    // flush() does nothing 
+                                   // but return 0 for memory based device
     delete dev;
 
 }
@@ -128,7 +132,8 @@ TEST_F(nvchunkTest, nvchunk) {
     /* map the whole device */
     pc = new nvchunk("memchunk1", dev, 0, 0);
     EXPECT_EQ(pc->va(), dev->va());
-    EXPECT_EQ(pc->size(), dev->size());
+    EXPECT_EQ(pc->size(), dev->size());    
+    
     delete pc;
 }
 
@@ -149,6 +154,22 @@ TEST_F(nvchunkTest, NVM) {
 
     char* p = pc->va();
     pc->flush();
+
+    /* open the same chunk for the 2nd time should return existing chunk */
+    nvchunk* pc1 = NVM::instance().openChunk("chunk1", path, 0, 0);
+    EXPECT_EQ(pc, pc1);
+
+    /* create a new chunk on an opened device should use existing nv_dev device */
+    nvchunk* pc2 = NVM::instance().openChunk("chunk2", path, 2, MB(10));
+    EXPECT_EQ(pc->_pDev, pc2->_pDev);
+
+    /* expect nullptr if dev is null */
+    EXPECT_EQ(nullptr, NVM::instance().mapChunk("chunk3", nullptr, 0, 0));
+
+    /* unmapping a chunk */
+    int count = NVM::instance().nchunks();
+    NVM::instance().unmapChunk("chunk2");
+    EXPECT_EQ(NVM::instance().mChunks.size(), count-1);
 
     unlink(path.c_str());
 
