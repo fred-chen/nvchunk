@@ -28,6 +28,7 @@ struct nvchunkTest : public testing::Test {
 };
 
 
+#ifdef HAVE_LIBPMEM_H
 TEST_F(nvchunkTest, mntpt) {
     string s("try pmemlib");
     stringstream sb;
@@ -38,6 +39,7 @@ TEST_F(nvchunkTest, mntpt) {
 
     EXPECT_STREQ(buf, s.c_str());
 }
+#endif
 
 TEST_F(nvchunkTest, nv_filedev) {
     string path;
