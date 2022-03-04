@@ -1,0 +1,5 @@
+# platform detection
+INCLUDE (CheckIncludeFiles)
+CHECK_INCLUDE_FILES (libpmem.h HAVE_LIBPMEM_H)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
+

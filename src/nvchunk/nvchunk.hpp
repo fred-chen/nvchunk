@@ -7,7 +7,6 @@
  */
 
 
-#include <libpmem.h>
 #include <vector>
 #include <string>
 #include <stdio.h>
@@ -16,10 +15,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-#include <sys/mman.h>
 #include <iostream>
 #include "singleton.hpp"
 #include "public.hpp"
+#include "cpmem.hpp"
 
 using std::string;
 
