@@ -154,11 +154,15 @@ TEST_F(nvchunkTest, nvchunk) {
 TEST_F(nvchunkTest, NVM) {
 
     // file based chunk
+#ifdef HAVE_LIBPMEM_H
     string path = str_pmem_mntpt + "DEV1";
+#else
+    string path = "/tmp/DEV1";
+#endif
     EXPECT_EQ(nullptr, NVM::instance().openChunk("chunk1", path, 0, 0));
 
     nvchunk* pc = NVM::instance().openChunk("chunk1", path, 32, MB(13));
-    EXPECT_NE(nullptr, pc);
+    ASSERT_NE(nullptr, pc);
     EXPECT_EQ(pc->size(), pc->_pDev->size() - 32);
 
     struct stat st;
@@ -175,6 +179,7 @@ TEST_F(nvchunkTest, NVM) {
 
     /* create a new chunk on an opened device should use existing nv_dev device */
     nvchunk* pc2 = NVM::instance().openChunk("chunk2", path, 2, MB(10));
+    ASSERT_NE(pc2, nullptr);
     EXPECT_EQ(pc->_pDev, pc2->_pDev);
 
     /* expect nullptr if dev is null */
