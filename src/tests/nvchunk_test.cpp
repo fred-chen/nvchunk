@@ -40,24 +40,31 @@ TEST_F(nvchunkTest, mntpt) {
 }
 
 TEST_F(nvchunkTest, nv_filedev) {
+    string path;
+    nv_dev* dev = nullptr;
 
-    string path = str_pmem_mntpt + "dev1";
+#ifdef HAVE_LIBPMEM_H
+    /* testing on a real NVM device */
+    path = str_pmem_mntpt + "dev1";
+    
     unlink(path.c_str());
 
     /* creating new file without size will raise an exception */
     EXPECT_THROW(new nv_filedev(path, 0), nv_exception);
 
     /* creating new file on a dax file system*/
-    nv_dev* dev = new nv_filedev(path, MB(10));
+    dev = new nv_filedev(path, MB(10));
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_TRUE(dev->is_pmem());
     EXPECT_EQ(0, dev->flush());
     delete dev;
     unlink(path.c_str());
+#endif
 
     /* creating new file on a regular file system*/
     path = "/tmp/dev1";
+    unlink(path.c_str());
     dev = new nv_filedev(path, MB(10));
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
@@ -91,14 +98,19 @@ TEST_F(nvchunkTest, nv_memdev) {
 }
 
 TEST_F(nvchunkTest, nv_dev) {
+    string path;
+    nv_dev* dev;
+
     /* file based */
-    string path = str_pmem_mntpt + "dev1";
-    nv_dev* dev = nv_dev::open(path, MB(10));
+#ifdef HAVE_LIBPMEM_H
+    path = str_pmem_mntpt + "dev1";
+    dev = nv_dev::open(path, MB(10));
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_TRUE(dev->is_pmem());
     delete dev;
     unlink(path.c_str());
+#endif
 
     path = "/tmp/dev1";
     dev = nv_dev::open(path, MB(10));
