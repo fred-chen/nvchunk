@@ -159,9 +159,12 @@ TEST_F(nvchunkTest, NVM) {
 #else
     string path = "/tmp/DEV1";
 #endif
+
+    unlink(path.c_str());
+
     EXPECT_EQ(nullptr, NVM::instance().openChunk("chunk1", path, 0, 0));
 
-    nvchunk* pc = NVM::instance().openChunk("chunk1", path, 32, MB(13));
+    nvchunk* pc = NVM::instance().openChunk("chunk2", path, 32, MB(13));
     ASSERT_NE(nullptr, pc);
     EXPECT_EQ(pc->size(), pc->_pDev->size() - 32);
 
@@ -174,23 +177,37 @@ TEST_F(nvchunkTest, NVM) {
     pc->flush();
 
     /* open the same chunk for the 2nd time should return existing chunk */
-    nvchunk* pc1 = NVM::instance().openChunk("chunk1", path, 0, 0);
+    nvchunk* pc1 = NVM::instance().openChunk("chunk2", path, 0, 0);
     EXPECT_EQ(pc, pc1);
 
     /* create a new chunk on an opened device should use existing nv_dev device */
-    nvchunk* pc2 = NVM::instance().openChunk("chunk2", path, 2, MB(10));
+    nvchunk* pc2 = NVM::instance().openChunk("chunk3", path, 2, MB(10));
     ASSERT_NE(pc2, nullptr);
     EXPECT_EQ(pc->_pDev, pc2->_pDev);
 
     /* expect nullptr if dev is null */
-    EXPECT_EQ(nullptr, NVM::instance().mapChunk("chunk3", nullptr, 0, 0));
+    EXPECT_EQ(nullptr, NVM::instance().mapChunk("chunk4", nullptr, 0, 0));
+
+    /* mapping is shared if they have a same backing device */
+    nvchunk::mapper<char> chars(pc);
+    chars[0] = 'F';
+    EXPECT_EQ('F', *(char*)pc->va());
+    EXPECT_EQ('F', *(char*)(pc2->va()+30));
+    auto chars2 = pc2->getmapper<char>();
+    EXPECT_EQ('F', chars2[30]);
+    EXPECT_EQ('F', (char)(pc2->_pDev->va()[32]));
+    chars[pc->size()-1] = 'R';
+    EXPECT_EQ('R', (char)(pc->_pDev->va()[pc->_pDev->size()-1]));
 
     /* unmapping a chunk */
     int count = NVM::instance().nchunks();
     NVM::instance().unmapChunk("chunk2");
     EXPECT_EQ(NVM::instance().mChunks.size(), count-1);
-
-    unlink(path.c_str());
-
+    
+    /* close a dev */
+    count = NVM::instance().ndevs();
+    NVM::instance().closeDev(path.c_str());
+    EXPECT_EQ(NVM::instance().mDevs.size(), count-1);
+    EXPECT_EQ(NVM::instance().mDevs.size(), 0);
 }
 

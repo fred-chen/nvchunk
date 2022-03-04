@@ -23,7 +23,7 @@ nv_dev* nv_dev::open(const string & name, size_t size)
             /*
              * file exists, choose the corresponding object type
              * nv_filedev is for general usage
-             * there could be optimal implementation for specific file types later
+             * there could be optimal implementation for specific file types
              *   S_ISCHR(st_buf.st_mode) devdax device (nvdimm or optane)
              *   S_ISBLK(st_buf.st_mode) block device (nvme ssd)
              *   S_ISREG(st_buf.st_mode) file on a fsdax file system or a regular file system

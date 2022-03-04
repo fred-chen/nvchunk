@@ -228,9 +228,31 @@ public:
         }
     }
 
+    template <typename T>
     class mapper {
+    private:
+        nvchunk*  mParent;
+        T*        mT;
+        size_t    mNumElements;
+    public:
+        mapper(nvchunk* parent) : mParent(parent), mNumElements(0) {
+            mNumElements = mParent->size() / sizeof(T);
+            mT = (T*)mParent->va();
+        }
+        T & operator [] (size_t index) {
+            return mT [index];
+        }
 
+        void flush( T *item )
+        {
+            mParent->flush(item,sizeof(T));
+        }
     };
+
+    template <typename T>
+    mapper<T> getmapper() {
+        return mapper<T>(this);
+    }
 };
 
 
@@ -245,6 +267,17 @@ GTEST_ONLY(public:)
     std::vector<nvchunk*> mChunks;        // NVM chunks
     std::vector<nv_dev*>  mDevs;          // NVM devices
 public:
+
+    /**
+     * @brief create or open a new nv_dev object and add it to mDevs
+     *        if path is "", create a private memory based nv_dev
+     *        if path isn't "", create a file based nv_dev
+     *        if the file specified by path doesn't exist, create a new file
+     * 
+     * @param path a file path, or "" if the device is memory based
+     * @param size size of the nv_dev
+     * @return nv_dev* the address of nv_dev
+     */
     nv_dev* openDev(const string & path, size_t size=0) {
         if( path != "" ) {
             // find existing backing dev
@@ -263,6 +296,24 @@ public:
     }
 
     /**
+     * @brief close a nv_dev
+     * 
+     * @param name name of the nv_dev to be closed
+     */
+    void closeDev( const string & name ) {
+        nv_dev* pd = getDev(name);
+        if(pd) {
+            pd->close();
+            for( auto itr = mDevs.begin(); itr != mDevs.end(); itr++ ) {
+                if((*itr)->name() == name) {
+                    mDevs.erase(itr);
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
      * @brief create new chunk and map it on an existing nv_dev
      * 
      * @param name        name of the chunk
@@ -272,6 +323,7 @@ public:
      * @return nvchunk*   a pointer to the newly created nvchunk
      */
     nvchunk* mapChunk(const string & name, nv_dev* dev, off64_t off=0, size_t size=0) {
+ERR("1 size=%d", size);
         nvchunk* pc;
 
         try {
@@ -281,6 +333,7 @@ public:
             ERR(e.what());
             return nullptr;
         }
+ERR("2 pc->size()=%d", pc->size());
         mChunks.push_back(pc);
         return pc;
     }
@@ -297,6 +350,21 @@ public:
         for(nvchunk* pc : mChunks ) {
             if(pc->name() == name) {
                 return pc;
+            }
+        }
+        return nullptr;
+    }
+
+    /**
+     * @brief Get the nv_dev object in mDevs according to name
+     * 
+     * @param name the name of nv_dev
+     * @return nv_dev* a pointer to nv_dev if found, else nullptr
+     */
+    nv_dev* getDev(const string & name) {
+        for( nv_dev *pd : mDevs ) {
+            if( pd->name() == name ) {
+                return pd;
             }
         }
         return nullptr;
@@ -348,5 +416,8 @@ public:
 
     int nchunks() {
         return mChunks.size();
+    }
+    int ndevs() {
+        return mDevs.size();
     }
 };
