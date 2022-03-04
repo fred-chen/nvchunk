@@ -152,7 +152,6 @@ public:
 
 /**
  * @brief a nv_memdev is an nv_dev backed by memory
- *        the code will try to use huge pages to map a big chunk of memory
  * 
  */
 class nv_memdev : public nv_dev {
@@ -163,7 +162,7 @@ public:
             throw nv_exception("creating memory based mapping with zero size.");
         }
 
-        mVA = (char*) ::mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE|MAP_HUGETLB, -1, 0);
+        mVA = (char*) ::mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
         if (mVA == MAP_FAILED) {
             throw nv_exception("failed to mmap /dev/zero.");
         }
