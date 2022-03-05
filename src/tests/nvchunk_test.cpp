@@ -43,23 +43,25 @@ TEST_F(nvchunkTest, usage) {
     nvchunk *pc_f = NVM::instance().openChunk("chunk_f", path, 0, MB(1));
 
     // now you can use pc->va() as if it's a regular pointer
-    strcpy(pc_m->va(), "Hello NVM");
+    strcpy( (char*) pc_m->va(), "Hello NVM");
     memcpy(pc_f->va(), pc_m->va(), strlen("Hello NVM")+1);
 
-    // pc->flush() to flush data onto disk or NVM
+    // nvchunk::flush() to flush data onto disk or NVM
     pc_f->flush();
 
-    // pc->flush() always return -1 and set errno if a chunk is memory backed 
+    // nvchunk::flush() always return -1 and set errno 
+    // if a chunk is memory backed 
     EXPECT_EQ(-1, pc_m->flush());
 
-    // after flush the content of backing file should be persistent
+    // after flush the content to backing file
+    // data should be persistent
     int fd = ::open(path.c_str(), O_RDWR);
     char buf[20] = {0};
     ::read(fd, buf, strlen("Hello NVM")+1);
     EXPECT_STREQ("Hello NVM", buf);
 
     // a chunk can be converted (or say mapped) to any structures
-    // with a mapper for easy access.
+    // with a mapper object for easy access.
     struct SA {
         char age;
         char name[10];
@@ -195,7 +197,7 @@ TEST_F(nvchunkTest, nvchunk) {
 
     /* map a region on the backing device */
     nvchunk* pc = new nvchunk("memchunk1", dev, 4, dev->size() - 4);
-    EXPECT_EQ(pc->va(), dev->va()+4);
+    EXPECT_EQ(pc->va(), (char*)dev->va() + 4);
     EXPECT_EQ(pc->size(), dev->size() - 4);
     delete pc;
 
@@ -230,7 +232,7 @@ TEST_F(nvchunkTest, NVM) {
     EXPECT_EQ(st.st_size, MB(13)+32);
     EXPECT_EQ(st.st_size, pc->_pDev->size());
 
-    char* p = pc->va();
+    char* p = (char*) pc->va();
     pc->flush();
 
     /* open the same chunk for the 2nd time should return existing chunk */
@@ -249,12 +251,12 @@ TEST_F(nvchunkTest, NVM) {
     nvchunk::mapper<char> chars(pc);
     chars[0] = 'F';
     EXPECT_EQ('F', *(char*)pc->va());
-    EXPECT_EQ('F', *(char*)(pc2->va()+30));
+    EXPECT_EQ('F', *((char*)pc2->va()+30));
     auto chars2 = pc2->getmapper<char>();
     EXPECT_EQ('F', chars2[30]);
-    EXPECT_EQ('F', (char)(pc2->_pDev->va()[32]));
+    EXPECT_EQ('F', (char)(((char*)pc2->_pDev->va())[32]));
     chars[pc->size()-1] = 'R';
-    EXPECT_EQ('R', (char)(pc->_pDev->va()[pc->_pDev->size()-1]));
+    EXPECT_EQ('R', (char)(((char*)pc->_pDev->va())[pc->_pDev->size()-1]));
 
     /* unmapping a chunk */
     int count = NVM::instance().nchunks();

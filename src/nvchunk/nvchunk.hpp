@@ -36,19 +36,18 @@ class nv_dev {
 protected:
     string    mName;             // name of this backing device
     size_t    mSize;             // size of dev
-    char*     mVA;               // virtual address mapped
+    void*     mVA;               // virtual address mapped
     int       mIsPmem;           // is the backing device an NVM device?
 public:
-    size_t         size()  { return mSize; }
-    const string & name()  { return mName; }
-    char*          va()    { return mVA;   }
+    size_t         size () const { return mSize; }
+    const string & name () const { return mName; }
+    void*          va   () const { return mVA;   }
 
     static nv_dev* open(const string & name, size_t size);
     virtual bool close() = 0;
 
     nv_dev(string name = "", size_t size=0) 
-        : mName(name),mSize(size),mVA(nullptr),mIsPmem(false) 
-    {}
+        : mName(name),mSize(size),mVA(nullptr),mIsPmem(false) {}
     virtual ~nv_dev() {}
 
     /**
@@ -56,7 +55,7 @@ public:
      * 
      * @return int 0 if succ, else -1 with errno set
      */
-    virtual int flush(char* addr = nullptr, size_t size = 0) = 0;
+    virtual int flush(void* addr = nullptr, size_t size = 0) = 0;
 
     virtual bool is_pmem(bool retest = false) {
         return retest ? pmem_is_pmem(mVA, mSize) : mIsPmem;
@@ -101,7 +100,7 @@ public:
             size  = 0;
         }
 
-        if((mVA = (char*)pmem_map_file(mName.c_str(), size, flags, 0666, &mapped_len, &is_pmem)) == nullptr) {
+        if((mVA = (void*)pmem_map_file(mName.c_str(), size, flags, 0666, &mapped_len, &is_pmem)) == nullptr) {
             throw nv_exception("failed to map device.");
         }
 
@@ -125,12 +124,12 @@ public:
      * @brief flush data onto persistent memory
      *        calling pmem_persist for NVM devices (NVDIMM, Optane)
      *        calling pmem_msync for regular file based devices
-     * 
+     *
      * @param addr the starting address to flush
      * @param size size of data to flush
      * @return int 0 if succ, else -1 and errno tells why
      */
-    virtual int flush(char* addr = 0, size_t size = 0) override { 
+    virtual int flush(void* addr = 0, size_t size = 0) override { 
         int rt = 0;
         if( mIsPmem ) {
             (addr && size) ? pmem_persist(addr, size) : 
@@ -163,7 +162,8 @@ public:
             throw nv_exception("creating memory based mapping with zero size.");
         }
 
-        mVA = (char*) ::mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+        mVA = (void*) ::mmap(NULL, size, PROT_READ | PROT_WRITE, 
+                                MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
         if (mVA == MAP_FAILED) {
             throw nv_exception("failed to mmap /dev/zero.");
         }
@@ -179,9 +179,9 @@ public:
         return true;
     }
 
-    virtual int flush(char* addr, size_t size) override { 
+    virtual int flush(void* addr, size_t size) override { 
         /* no action taken for memory based device */
-        errno = EBADR;
+        errno = EINVAL;
         return -1;
     }
 
@@ -196,30 +196,18 @@ public:
 class nvchunk {
 private:
 GTEST_ONLY(public:)
-    char*     mVA;           // starting address of this chunk
+    void*     mVA;           // starting address of this chunk
     size_t    mSize;         // size of this chunk
     uint64_t  mFlags;        // flags of this chunk
     nv_dev*   _pDev;         // the backing device
     string    mName;         // name of this chunk
 public:
-    const string& name() {
-        return mName;
-    }
-    char* va() {
-        return mVA;
-    }
-    size_t size() {
-        return mSize;
-    }
-    int flush() {
-       return _pDev->flush(mVA, mSize);
-    }
-    int flush( char * addr, size_t size ) {
-       return _pDev->flush(addr, size);
-    }
-    bool is_nvm() {
-        return _pDev->is_pmem();
-    }
+    const string& name() const { return mName; }
+    void*    va () const { return mVA; }
+    size_t size () const { return mSize; }
+    bool is_nvm () const { return _pDev->is_pmem(); }
+    int flush()                           { return _pDev->flush(mVA, mSize); }
+    int flush( void * addr, size_t size ) { return _pDev->flush(addr, size); }
 
     nvchunk(const string & name, nv_dev* dev, off64_t off=0, size_t size=0)
         : mName(name), mFlags(0), _pDev(dev), mVA(nullptr), mSize(size) 
@@ -248,14 +236,12 @@ public:
             return mT [index];
         }
 
-        void flush( T *item )
-        {
-            mParent->flush( (char*) item, sizeof(T) );
+        void flush( T *item ) {
+            mParent->flush( (void*) item, sizeof(T) );
         }
 
-        void flush( size_t index )
-        {
-            mParent->flush( (char*) & mT[index], sizeof(T) );
+        void flush( size_t index ) {
+            mParent->flush( (void*) & mT[index], sizeof(T) );
         }
 
         T* operator->() {
@@ -422,6 +408,17 @@ public:
     {
         for(auto it = mChunks.begin(); it != mChunks.end(); it++) {
             if((*it)->name() == name) {
+                delete (*it);
+                mChunks.erase(it);
+                break;
+            }
+        }
+    }
+
+    void unmapChunk( void * va )
+    {
+        for(auto it = mChunks.begin(); it != mChunks.end(); it++) {
+            if((*it)->va() == va) {
                 delete (*it);
                 mChunks.erase(it);
                 break;
