@@ -13,17 +13,25 @@
 #ifdef HAVE_LIBPMEM_H
 #include <libpmem.h>        // PMDK present
 #else
+/*
+ * the environment doesn't have PMDK library
+ * we must provide alternative implementation
+ * for pmem functions.
+ */
 # define PMEM_FILE_CREATE O_CREAT|O_RDWR
 
 int pmem_is_pmem(const void * addr, size_t len) {
     return 0;
 }
+
 void pmem_persist(void * addr, size_t len) {
     ::msync(addr, len, MS_SYNC);
 }
+
 int pmem_msync(void * addr, size_t len) {
     return ::msync(addr, len, MS_SYNC);
 }
+
 void * pmem_map_file(const char * path, size_t len, int flags, mode_t mode, size_t *mapped_lenp, int * is_pmemp) {
     // ERR("pmem_map_file: len=%d path=%s flags=0x%x mode=0%o", len, path, flags, mode);
 

@@ -3,7 +3,7 @@
  * @email fred.chen@live.com
  * @create date 2022-03-01 15:00:41
  * @modify date 2022-03-01 15:00:41
- * @desc nvchunk represents a continious region on an nvm device
+ * @desc nvchunk represents a contigous region on an nvm device
  */
 
 
@@ -28,8 +28,8 @@ using std::string;
  *        an NVM device can be either:
  *        1. a file based device
  *           a) a file on a regular file system
- *           b) a file on a dax file system ( backed by fsdax NVDIMM or Optane )
- *           c) a devdax device (eg. /dev/dax0.0)
+ *           b) a file on a dax file system (backed by fsdax NVDIMM or Optane)
+ *           c) a devdax device (e.g. /dev/dax0.0)
  *        2. a memory based device
  */
 class nv_dev {
@@ -39,17 +39,16 @@ protected:
     char*     mVA;               // virtual address mapped
     int       mIsPmem;           // is the backing device an NVM device?
 public:
-    size_t          size()  { return mSize; }
-    const string&   name()  { return mName; }
-    char*           va()    { return mVA;   }
+    size_t         size()  { return mSize; }
+    const string & name()  { return mName; }
+    char*          va()    { return mVA;   }
 
     static nv_dev* open(const string & name, size_t size);
     virtual bool close() = 0;
 
     nv_dev(string name = "", size_t size=0) 
         : mName(name),mSize(size),mVA(nullptr),mIsPmem(false) 
-    {
-    }
+    {}
     virtual ~nv_dev() {}
 
     /**
@@ -66,7 +65,7 @@ public:
 };
 
 /**
- * @brief a nv_filedev is an nv_dev backed by a file
+ * @brief an nv_filedev is an nv_dev backed by a file
  *        the backing file can be a file on dax file system
  *        or a DAX raw device or a file on a regular file system
  * 
@@ -134,10 +133,12 @@ public:
     virtual int flush(char* addr = 0, size_t size = 0) override { 
         int rt = 0;
         if( mIsPmem ) {
-            (addr && size) ? pmem_persist(addr, size) : pmem_persist(mVA, mSize); 
+            (addr && size) ? pmem_persist(addr, size) : 
+                             pmem_persist(mVA, mSize);
         }
         else {
-            rt = (addr && size) ? pmem_msync(addr, size) : pmem_msync(mVA, mSize);
+            rt = (addr && size) ? pmem_msync(addr, size) : 
+                                  pmem_msync(mVA, mSize);
         }
         return rt;
     }
@@ -151,7 +152,7 @@ public:
 };
 
 /**
- * @brief a nv_memdev is an nv_dev backed by memory
+ * @brief an nv_memdev is an nv_dev backed by memory
  * 
  */
 class nv_memdev : public nv_dev {
@@ -180,14 +181,15 @@ public:
 
     virtual int flush(char* addr, size_t size) override { 
         /* no action taken for memory based device */
-        return 0;
+        errno = EBADR;
+        return -1;
     }
 
     virtual ~nv_memdev() { close(); }
 };
 
 /**
- * @brief a nvmchunk object represents a contiguous region on an NVM device
+ * @brief an nvchunk object represents a contiguous region on an NVM device
  *        that mapped to a virtual address 
  * 
  */
@@ -211,6 +213,9 @@ public:
     }
     int flush() {
        return _pDev->flush(mVA, mSize);
+    }
+    int flush( char * addr, size_t size ) {
+       return _pDev->flush(addr, size);
     }
     bool is_nvm() {
         return _pDev->is_pmem();
@@ -245,7 +250,16 @@ public:
 
         void flush( T *item )
         {
-            mParent->flush(item,sizeof(T));
+            mParent->flush( (char*) item, sizeof(T) );
+        }
+
+        void flush( size_t index )
+        {
+            mParent->flush( (char*) & mT[index], sizeof(T) );
+        }
+
+        T* operator->() {
+            return mT;
         }
     };
 
@@ -296,7 +310,7 @@ public:
     }
 
     /**
-     * @brief close a nv_dev
+     * @brief close an nv_dev
      * 
      * @param name name of the nv_dev to be closed
      */
@@ -370,18 +384,21 @@ public:
 
     /**
      * @brief create an nvm chunk by path, add the chunk pointer to mChunks.
-     *        if a chunk of the name in arg list already exists, return the existing pointer
+     *        if a chunk of the name in arg list already exists, return the 
+     *        existing pointer
      *        otherwise, create a new chunk according the path argument
      *        a new nv_dev object may be created if it's not currently in mDevs
      * 
      * @param name   name of the chunk
-     * @param path   path of backing device, a file path of an nvm device or a regular file, 
+     * @param path   path of backing device, a file path of an nvm device or a 
+     *               regular file, 
      *               memory simulated backing device if path==""
      * @param offset offset within the backing device
-     * @param size   size of the chunk, size must be greater or equal to the backing device size
+     * @param size   size of the chunk, size must be greater or equal to the 
+     *               backing device size
      *               if size == 0, use whole backing device as chunk
-     * @return a pointer to nvchunk object if open success
-     * @return nullptr if failed to open
+     * @return       a pointer to nvchunk object if open success
+     * @return       nullptr if failed to open
      */
     nvchunk* openChunk(string name, const string & path = "", off64_t offset = 0, size_t size = 0) 
     {
@@ -417,5 +434,21 @@ public:
     }
     int ndevs() {
         return mDevs.size();
+    }
+
+    /**
+     * @brief close all nv_devs in mDevs and unmap all chunks in mChunks
+     * 
+     */
+    void clear() {
+        for( auto pc : mChunks ) {
+            delete pc;
+        }
+        for( auto pd: mDevs ) {
+            pd->close();
+            delete pd;
+        }
+        mChunks.clear();
+        mDevs.clear();
     }
 };

@@ -27,6 +27,62 @@ struct nvchunkTest : public testing::Test {
     }
 };
 
+TEST_F(nvchunkTest, usage) {
+
+// file based chunk
+#ifdef HAVE_LIBPMEM_H
+    string path = str_pmem_mntpt + "DEV1";
+#else
+    string path = "/tmp/DEV1";
+#endif
+
+    // create and map a memory based chunk
+    nvchunk *pc_m = NVM::instance().openChunk("chunk_m", "", 0, MB(1));
+
+    // create and map a file based chunk
+    nvchunk *pc_f = NVM::instance().openChunk("chunk_f", path, 0, MB(1));
+
+    // now you can use pc->va() as if it's a regular pointer
+    strcpy(pc_m->va(), "Hello NVM");
+    memcpy(pc_f->va(), pc_m->va(), strlen("Hello NVM")+1);
+
+    // pc->flush() to flush data onto disk or NVM
+    pc_f->flush();
+
+    // pc->flush() always return -1 and set errno if a chunk is memory backed 
+    EXPECT_EQ(-1, pc_m->flush());
+
+    // after flush the content of backing file should be persistent
+    int fd = ::open(path.c_str(), O_RDWR);
+    char buf[20] = {0};
+    ::read(fd, buf, strlen("Hello NVM")+1);
+    EXPECT_STREQ("Hello NVM", buf);
+
+    // a chunk can be converted (or say mapped) to any structures
+    // with a mapper for easy access.
+    struct SA {
+        char age;
+        char name[10];
+    } a = { 13, "abcd1234" };          // this is a sample structure
+    
+    auto ma = pc_f->getmapper<SA>();   // get a mapper for SA type records
+    ma[0] = a;                         // you can easily use ma as an 
+                                       // SA[] array to access its elements
+    ma.flush( & (ma[0]) );             // flush a single element to disk
+    NVM::instance().clear();           // close all devices and unmap all chunks
+
+    EXPECT_EQ(0, NVM::instance().nchunks());
+    EXPECT_EQ(0, NVM::instance().ndevs());
+
+    // reopen the nv_dev and map it to a chunk
+    pc_f = NVM::instance().openChunk("chunk_f", path, 0, 0);
+    auto mb = pc_f->getmapper<SA>();   // get the new mapper
+    EXPECT_EQ(mb[0].age, a.age);       // check data persistency after reopen
+    EXPECT_STREQ(mb[0].name, a.name);
+    
+    unlink(path.c_str());
+}
+
 
 #ifdef HAVE_LIBPMEM_H
 TEST_F(nvchunkTest, mntpt) {
@@ -93,8 +149,8 @@ TEST_F(nvchunkTest, nv_memdev) {
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_FALSE(dev->is_pmem());
-    EXPECT_EQ(dev->flush(), 0);    // flush() does nothing 
-                                   // but return 0 for memory based device
+    EXPECT_EQ(dev->flush(), -1);    // flush() does nothing 
+                                   // but return -1 for memory based device
     delete dev;
 
 }
@@ -161,6 +217,7 @@ TEST_F(nvchunkTest, NVM) {
 #endif
 
     unlink(path.c_str());
+    NVM::instance().clear();
 
     EXPECT_EQ(nullptr, NVM::instance().openChunk("chunk1", path, 0, 0));
 
@@ -210,4 +267,5 @@ TEST_F(nvchunkTest, NVM) {
     EXPECT_EQ(NVM::instance().mDevs.size(), count-1);
     EXPECT_EQ(NVM::instance().mDevs.size(), 0);
 }
+
 
