@@ -6,7 +6,7 @@
  * @desc cross platform pmem functions
  */
 
-#include <config.h>
+#include <config.hpp>
 #include <sys/mman.h>       // no PMDK
 #include "public.hpp"
 
