@@ -323,7 +323,6 @@ public:
      * @return nvchunk*   a pointer to the newly created nvchunk
      */
     nvchunk* mapChunk(const string & name, nv_dev* dev, off64_t off=0, size_t size=0) {
-ERR("1 size=%d", size);
         nvchunk* pc;
 
         try {
@@ -333,7 +332,6 @@ ERR("1 size=%d", size);
             ERR(e.what());
             return nullptr;
         }
-ERR("2 pc->size()=%d", pc->size());
         mChunks.push_back(pc);
         return pc;
     }
