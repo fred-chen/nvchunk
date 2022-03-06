@@ -209,7 +209,7 @@ public:
     int flush()                           { return _pDev->flush(mVA, mSize); }
     int flush( void * addr, size_t size ) { return _pDev->flush(addr, size); }
 
-    nvchunk(const string & name, nv_dev* dev, off64_t off=0, size_t size=0)
+    nvchunk(const string & name, nv_dev* dev, off_t off=0, size_t size=0)
         : mName(name), mFlags(0), _pDev(dev), mVA(nullptr), mSize(size) 
     {
         if(!_pDev) {
@@ -322,7 +322,7 @@ public:
      * @param size        size of the chunk
      * @return nvchunk*   a pointer to the newly created nvchunk
      */
-    nvchunk* mapChunk(const string & name, nv_dev* dev, off64_t off=0, size_t size=0) {
+    nvchunk* mapChunk(const string & name, nv_dev* dev, off_t off=0, size_t size=0) {
         nvchunk* pc;
 
         try {
@@ -386,7 +386,7 @@ public:
      * @return       a pointer to nvchunk object if open success
      * @return       nullptr if failed to open
      */
-    nvchunk* openChunk(string name, const string & path = "", off64_t offset = 0, size_t size = 0) 
+    nvchunk* openChunk(string name, const string & path = "", off_t offset = 0, size_t size = 0) 
     {
         int rt;
 
