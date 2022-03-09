@@ -32,7 +32,7 @@ nv_dev* nv_dev::open(const string & name, size_t size)
         }
     }
     catch (nv_exception e) {
-        ERR(e.what());
+        LOG(ERROR) << e.what() << std::endl;
         return nullptr;
     }
     return pDev;

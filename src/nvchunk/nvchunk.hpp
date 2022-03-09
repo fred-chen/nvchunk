@@ -19,9 +19,13 @@
 #include "singleton.hpp"
 #include "public.hpp"
 #include "cpmem.hpp"
+#include "flog.hpp"
 
 using std::string;
-
+using FLOG::LOG;
+using FLOG::ERROR;
+using FLOG::INFO;
+using FLOG::WARN;
 
 /**
  * @brief an nv_dev object represents a mapped NVM device
@@ -322,14 +326,16 @@ public:
      * @param size        size of the chunk
      * @return nvchunk*   a pointer to the newly created nvchunk
      */
-    nvchunk* mapChunk(const string & name, nv_dev* dev, off_t off=0, size_t size=0) {
+    nvchunk* mapChunk(const string & name, nv_dev* dev, 
+                        off_t off=0, size_t size=0)
+    {
         nvchunk* pc;
 
         try {
             pc = new nvchunk(name, dev, off, size);
         }
         catch (nv_exception e) {
-            ERR(e.what());
+            LOG(ERROR) << e.what() << std::endl;
             return nullptr;
         }
         mChunks.push_back(pc);

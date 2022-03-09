@@ -16,7 +16,7 @@ struct nvchunkTest : public testing::Test {
     char *env_pmem_mntpt = std::getenv("PMEM_MNTPT");
     string str_pmem_mntpt = env_pmem_mntpt ? env_pmem_mntpt : PMEM_MNTPT;
 
-    void SetUp() { 
+    void SetUp() {
         ofs.open(PMEM_MNTPT "libpmem_test");
         ifs.open(PMEM_MNTPT "libpmem_test");
     }
@@ -180,7 +180,9 @@ TEST_F(nvchunkTest, nv_dev) {
     delete dev;
     unlink(path.c_str());
 
+    LOG(ERROR) << "Expecting nullptr ..." << std::endl;
     EXPECT_EQ(nullptr, nv_dev::open(path, 0));
+    LOG(ERROR) << "END Expecting nullptr ..." << std::endl;
 
     /* mem based */
     dev = nv_dev::open("", MB(10));
@@ -270,4 +272,8 @@ TEST_F(nvchunkTest, NVM) {
     EXPECT_EQ(NVM::instance().mDevs.size(), 0);
 }
 
-
+int main(int argc, char **argv) {
+    FLOG::set_log_devices(FLOG::LOGFILE);
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
