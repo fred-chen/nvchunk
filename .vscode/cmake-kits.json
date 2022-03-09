@@ -1,0 +1,6 @@
+[
+    {
+        "name": "devtoolset",
+        "environmentSetupScript": "/opt/rh/gcc-toolset-9/enable"
+    }
+]
