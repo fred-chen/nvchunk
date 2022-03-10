@@ -1,1 +1,1 @@
-/* #undef HAVE_LIBPMEM_H */
+#define HAVE_LIBPMEM_H

@@ -56,7 +56,7 @@ inline static void __assertFunction( const char *message, const char * file, int
     : __assertFunction(msg,__FILE__,__LINE__))
 
 
-std::mutex g_pub_mu_cout;
+static std::mutex g_pub_mu_cout;
 
 class nv_exception : public std::exception {
     int   _errno;
@@ -77,13 +77,13 @@ public:
   using std::runtime_error::runtime_error;
 };
 
-bool g_printtime = false;
-void setprinttime(bool prt = false) {
+static bool g_printtime = false;
+inline void setprinttime(bool prt = false) {
     g_printtime = prt;
 }
 
 template<typename ... Args>
-std::string string_format( const std::string& format, Args ... args )
+inline std::string string_format( const std::string& format, Args ... args )
 {
     int size_s = std::snprintf( nullptr, 0, format.c_str(), args ... ) + 1; // Extra space for '\0'
     if( size_s <= 0 ){ throw std::runtime_error( "Error during formatting." ); }
@@ -94,7 +94,7 @@ std::string string_format( const std::string& format, Args ... args )
 }
 
 template<typename ... Args>
-void safe_print( std::string format, Args ... args )
+inline void safe_print( std::string format, Args ... args )
 {
     std::string t("");
     thread_local static std::chrono::steady_clock::time_point last_print_time = std::chrono::steady_clock::now();
@@ -108,7 +108,7 @@ void safe_print( std::string format, Args ... args )
 }
 
 template<typename ... Args>
-void errout( std::string format, Args ... args )
+inline void errout( std::string format, Args ... args )
 {
     std::string t("");
     thread_local static std::chrono::steady_clock::time_point last_print_time = std::chrono::steady_clock::now();
@@ -127,7 +127,7 @@ void errout( std::string format, Args ... args )
  * @param pct the probability of returning true (in percentage)
  * @return true if hit, else false
  */
-bool dice(int pct=0) {
+inline bool dice(int pct=0) {
     static unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     static std::default_random_engine generator(seed);
     std::uniform_int_distribution<int> distribution(0,99);
@@ -135,7 +135,7 @@ bool dice(int pct=0) {
     return (number < pct);
 }
 
-std::string uuid() {
+inline std::string uuid() {
     static std::random_device dev;
     static std::mt19937 rng(dev());
 

@@ -8,7 +8,7 @@
 
 #include <config.hpp>
 #include <sys/mman.h>       // no PMDK
-#include "public.hpp"
+// #include "public.hpp"
 
 #ifdef HAVE_LIBPMEM_H
 #include <libpmem.h>        // PMDK present

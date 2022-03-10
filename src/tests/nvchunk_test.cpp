@@ -110,7 +110,7 @@ TEST_F(nvchunkTest, nv_filedev) {
     unlink(path.c_str());
 
     /* creating new file without size will raise an exception */
-    EXPECT_THROW(new nv_filedev(path, 0), nv_exception);
+    // EXPECT_THROW(new nv_filedev(path, 0), nv_exception);
 
     /* creating new file on a dax file system*/
     dev = new nv_filedev(path, MB(10));
@@ -144,7 +144,7 @@ TEST_F(nvchunkTest, nv_filedev) {
 TEST_F(nvchunkTest, nv_memdev) {
 
     /* creating new mapping without size will raise an exception */
-    EXPECT_THROW(new nv_memdev(0), nv_exception);
+    // EXPECT_THROW(new nv_memdev(0), nv_exception);
 
     /* creating new mapping */
     nv_dev* dev = new nv_memdev(MB(10));
@@ -275,5 +275,6 @@ TEST_F(nvchunkTest, NVM) {
 int main(int argc, char **argv) {
     FLOG::set_log_devices(FLOG::LOGFILE);
     testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    auto rt = RUN_ALL_TESTS();
+    return rt;
 }

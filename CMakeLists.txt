@@ -9,19 +9,25 @@ include_directories("flog/src/include/")
 
 project(nvchunk C CXX)
 
-add_subdirectory(googletest)
-add_subdirectory(flog)
-
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
 
-# add gcov flag
 SET(CMAKE_CXX_FLAGS 
     "${CMAKE_CXX_FLAGS} -Werror -Wno-format-nonliteral -Wno-format-security")
-SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO 
-    "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} --coverage")
-SET(CMAKE_CXX_FLAGS_DEBUG 
-    "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} --coverage")
+SET(CMAKE_CXX_FLAGS_RELEASE
+    "${CMAKE_CXX_FLAGS_RELEASE} -g")
+
+# add gcov build type
+if( ${CMAKE_BUILD_TYPE} STREQUAL Coverage )
+    message("* Adding build types...")
+    SET(CMAKE_CXX_FLAGS_COVERAGE
+        "${CMAKE_CXX_FLAGS_DEBUG} -coverage")
+    SET(CMAKE_C_FLAGS_COVERAGE
+        "${CMAKE_C_FLAGS_DEBUG} -fprofile-arcs -ftest-coverage")
+endif()
+
+add_subdirectory(googletest)
+add_subdirectory(flog)
 
 include(CTest)
 enable_testing()
