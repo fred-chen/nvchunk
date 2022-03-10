@@ -194,7 +194,7 @@ public:
 
 /**
  * @brief an nvchunk object represents a contiguous region on an NVM device
- *        that mapped to a virtual address 
+ *        that was mapped to a virtual address 
  * 
  */
 class nvchunk {
