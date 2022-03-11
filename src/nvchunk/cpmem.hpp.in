@@ -6,9 +6,10 @@
  * @desc cross platform pmem functions
  */
 
-#include <config.hpp>
 #include <sys/mman.h>       // no PMDK
 // #include "public.hpp"
+
+#cmakedefine HAVE_LIBPMEM_H
 
 #ifdef HAVE_LIBPMEM_H
 #include <libpmem.h>        // PMDK present

@@ -1,8 +1,5 @@
-add_library(nvchunk STATIC nvchunk.cpp)
-
+# platform detection
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cpmem.hpp.in ${CMAKE_CURRENT_SOURCE_DIR}/cpmem.hpp)
 IF(NOT HAVE_LIBPMEM_H)
 MESSAGE( STATUS "NO LIBPMEM" )
-ELSE()
-target_link_libraries(nvchunk pmem)
 ENDIF()
-
