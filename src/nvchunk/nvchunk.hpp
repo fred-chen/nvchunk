@@ -30,9 +30,11 @@ namespace NVCHUNK {
 #define GTEST_ONLY(expr)
 #endif
 
+#ifndef KB
 #define KB (0x1<<10)
 #define MB (0x1<<20)
 #define GB (0x1<<30)
+#endif
 
 template <class T>
 class Singleton

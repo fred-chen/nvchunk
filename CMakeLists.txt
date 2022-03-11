@@ -5,6 +5,7 @@ execute_process(COMMAND uname "-s"
 )
 
 include_directories("googletest/googletest/include/")
+include_directories("flog/src/include")
 
 project(nvchunk C CXX)
 
