@@ -58,7 +58,7 @@ class nv_exception : public std::exception {
     std::string _errstr;
     std::string _whatmsg;
 public:
-    nv_exception(std::string msg) noexcept : _errno(errno), _errstr(std::strerror(errno))
+    nv_exception(std::string msg) noexcept : _errno(errno), _errstr(::strerror(errno))
     {
         _whatmsg = msg + "(errno(" + std::to_string(errno) + "): " + _errstr + ")";
     }
