@@ -6,6 +6,7 @@
 #include <sstream>
 
 using namespace std;
+using namespace NVCHUNK;
 
 #define PMEM_MNTPT "/pmem/"
 
@@ -37,10 +38,10 @@ TEST_F(nvchunkTest, usage) {
 #endif
 
     // create and map a memory based chunk
-    nvchunk *pc_m = NVM::instance().openChunk("chunk_m", "", 0, MB(1));
+    nvchunk *pc_m = NVM::instance().openChunk("chunk_m", "", 0, MB * 1);
 
     // create and map a file based chunk
-    nvchunk *pc_f = NVM::instance().openChunk("chunk_f", path, 0, MB(1));
+    nvchunk *pc_f = NVM::instance().openChunk("chunk_f", path, 0, MB * 1);
 
     // now you can use pc->va() as if it's a regular pointer
     strcpy( (char*) pc_m->va(), "Hello NVM");
@@ -113,7 +114,7 @@ TEST_F(nvchunkTest, nv_filedev) {
     // EXPECT_THROW(new nv_filedev(path, 0), nv_exception);
 
     /* creating new file on a dax file system*/
-    dev = new nv_filedev(path, MB(10));
+    dev = new nv_filedev(path, MB * 10);
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_TRUE(dev->is_pmem());
@@ -125,7 +126,7 @@ TEST_F(nvchunkTest, nv_filedev) {
     /* creating new file on a regular file system*/
     path = "/tmp/dev1";
     unlink(path.c_str());
-    dev = new nv_filedev(path, MB(10));
+    dev = new nv_filedev(path, MB * 10);
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_FALSE(dev->is_pmem());
@@ -136,7 +137,7 @@ TEST_F(nvchunkTest, nv_filedev) {
     dev = new nv_filedev(path, 0);
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
-    EXPECT_EQ(dev->size(), MB(10));
+    EXPECT_EQ(dev->size(), MB * 10);
     delete dev;
     unlink(path.c_str());
 }
@@ -147,7 +148,7 @@ TEST_F(nvchunkTest, nv_memdev) {
     // EXPECT_THROW(new nv_memdev(0), nv_exception);
 
     /* creating new mapping */
-    nv_dev* dev = new nv_memdev(MB(10));
+    nv_dev* dev = new nv_memdev(MB * 10);
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_FALSE(dev->is_pmem());
@@ -164,7 +165,7 @@ TEST_F(nvchunkTest, nv_dev) {
     /* file based */
 #ifdef HAVE_LIBPMEM_H
     path = str_pmem_mntpt + "dev1";
-    dev = nv_dev::open(path, MB(10));
+    dev = nv_dev::open(path, MB * 10);
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_TRUE(dev->is_pmem());
@@ -173,7 +174,7 @@ TEST_F(nvchunkTest, nv_dev) {
 #endif
 
     path = "/tmp/dev1";
-    dev = nv_dev::open(path, MB(10));
+    dev = nv_dev::open(path, MB * 10);
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_FALSE(dev->is_pmem());
@@ -185,14 +186,14 @@ TEST_F(nvchunkTest, nv_dev) {
     LOG(ERROR) << "END Expecting nullptr ..." << std::endl;
 
     /* mem based */
-    dev = nv_dev::open("", MB(10));
+    dev = nv_dev::open("", MB * 10);
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_FALSE(dev->is_pmem());
 }
 
 TEST_F(nvchunkTest, nvchunk) {
-    nv_dev* dev = nv_dev::open("", MB(10));
+    nv_dev* dev = nv_dev::open("", MB * 10);
     EXPECT_NE(dev, nullptr);
     EXPECT_NE(dev->va(), nullptr);
     EXPECT_FALSE(dev->is_pmem());
@@ -225,16 +226,15 @@ TEST_F(nvchunkTest, NVM) {
 
     EXPECT_EQ(nullptr, NVM::instance().openChunk("chunk1", path, 0, 0));
 
-    nvchunk* pc = NVM::instance().openChunk("chunk2", path, 32, MB(13));
+    nvchunk* pc = NVM::instance().openChunk("chunk2", path, 32, MB * 13);
     ASSERT_NE(nullptr, pc);
     EXPECT_EQ(pc->size(), pc->_pDev->size() - 32);
 
     struct stat st;
     EXPECT_EQ(0, stat(path.c_str(), &st));
-    EXPECT_EQ(st.st_size, MB(13)+32);
+    EXPECT_EQ(st.st_size, MB * 13+32);
     EXPECT_EQ(st.st_size, pc->_pDev->size());
 
-    char* p = (char*) pc->va();
     pc->flush();
 
     /* open the same chunk for the 2nd time should return existing chunk */
@@ -242,7 +242,7 @@ TEST_F(nvchunkTest, NVM) {
     EXPECT_EQ(pc, pc1);
 
     /* create a new chunk on an opened device should use existing nv_dev device */
-    nvchunk* pc2 = NVM::instance().openChunk("chunk3", path, 2, MB(10));
+    nvchunk* pc2 = NVM::instance().openChunk("chunk3", path, 2, MB * 10);
     ASSERT_NE(pc2, nullptr);
     EXPECT_EQ(pc->_pDev, pc2->_pDev);
 

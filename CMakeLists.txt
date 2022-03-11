@@ -5,7 +5,6 @@ execute_process(COMMAND uname "-s"
 )
 
 include_directories("googletest/googletest/include/")
-include_directories("flog/src/include/")
 
 project(nvchunk C CXX)
 
@@ -13,7 +12,7 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
 
 SET(CMAKE_CXX_FLAGS 
-    "${CMAKE_CXX_FLAGS} -Werror -Wno-format-nonliteral -Wno-format-security")
+    "${CMAKE_CXX_FLAGS} -Wextra -Wall -Werror -Wno-format-nonliteral -Wno-format-security")
 SET(CMAKE_CXX_FLAGS_RELEASE
     "${CMAKE_CXX_FLAGS_RELEASE} -g")
 

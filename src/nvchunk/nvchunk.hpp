@@ -16,10 +16,72 @@
 #include <fcntl.h>
 #include <string.h>
 #include <iostream>
-#include "singleton.hpp"
-#include "public.hpp"
+#include <random>
 #include "cpmem.hpp"
 #include "flog.hpp"
+
+namespace NVCHUNK {
+
+#define UNUSED(expr) do { (void)(expr); } while (0);
+
+#ifdef  UNDER_GTEST
+#define GTEST_ONLY(expr) expr
+#else
+#define GTEST_ONLY(expr)
+#endif
+
+#define KB (0x1<<10)
+#define MB (0x1<<20)
+#define GB (0x1<<30)
+
+template <class T>
+class Singleton
+{
+public:
+    static T& instance()
+    {
+        static T inst;
+        return inst;
+    }
+
+    Singleton(Singleton<T> const &)         = delete;
+    void operator=(Singleton<T> const &)    = delete;
+protected:
+    Singleton() = default;
+    ~Singleton() = default;
+};
+
+class nv_exception : public std::exception {
+    int   _errno;
+    std::string _errstr;
+    std::string _whatmsg;
+public:
+    nv_exception(std::string msg) noexcept : _errno(errno), _errstr(std::strerror(errno))
+    {
+        _whatmsg = msg + "(errno(" + std::to_string(errno) + "): " + _errstr + ")";
+    }
+    const char* what() const noexcept {
+        return _whatmsg.c_str();
+    }
+};
+
+inline std::string uuid() {
+    static std::random_device dev;
+    static std::mt19937 rng(dev());
+
+    std::uniform_int_distribution<int> dist(0, 15);
+
+    const char *v = "0123456789abcdef";
+    const bool dash[] = { 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0 };
+
+    std::string res;
+    for (int i = 0; i < 16; i++) {
+        if (dash[i]) res += "-";
+        res += v[dist(rng)];
+        res += v[dist(rng)];
+    }
+    return res;
+}
 
 using std::string;
 using FLOG::LOG;
@@ -183,7 +245,8 @@ public:
         return true;
     }
 
-    virtual int flush(void* addr, size_t size) override { 
+    virtual int flush(void* addr, size_t size) override {
+        UNUSED(addr); UNUSED(size);
         /* no action taken for memory based device */
         errno = EINVAL;
         return -1;
@@ -200,11 +263,11 @@ public:
 class nvchunk {
 private:
 GTEST_ONLY(public:)
-    void*     mVA;           // starting address of this chunk
-    size_t    mSize;         // size of this chunk
+    string    mName;         // name of this chunk
     uint64_t  mFlags;        // flags of this chunk
     nv_dev*   _pDev;         // the backing device
-    string    mName;         // name of this chunk
+    void*     mVA;           // starting address of this chunk
+    size_t    mSize;         // size of this chunk
 public:
     const string& name() const { return mName; }
     void*    va () const { return mVA; }
@@ -334,7 +397,7 @@ public:
         try {
             pc = new nvchunk(name, dev, off, size);
         }
-        catch (nv_exception e) {
+        catch (nv_exception & e) {
             LOG(ERROR) << e.what() << std::endl;
             return nullptr;
         }
@@ -394,8 +457,6 @@ public:
      */
     nvchunk* openChunk(string name, const string & path = "", off_t offset = 0, size_t size = 0) 
     {
-        int rt;
-
         // check existing chunks with the same name
         // return existing chunk if found
         nvchunk *pc = getChunk(name);
@@ -468,7 +529,6 @@ public:
  */
 inline nv_dev* nv_dev::open(const string & name, size_t size)
 {
-    struct stat st_buf;
     nv_dev* pDev;
     
     try {
@@ -487,9 +547,12 @@ inline nv_dev* nv_dev::open(const string & name, size_t size)
             pDev = new nv_filedev(name, size);
         }
     }
-    catch (nv_exception e) {
+    catch (nv_exception & e) {
         LOG(ERROR) << e.what() << std::endl;
         return nullptr;
     }
     return pDev;
 }
+
+
+} // namespace NVCHUNK
