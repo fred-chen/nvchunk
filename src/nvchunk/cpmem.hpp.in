@@ -41,19 +41,16 @@ void * pmem_map_file(const char * path, size_t len, int flags, mode_t mode, size
     flags = flags | O_RDWR;
     fd = ::open(path, flags, mode);
     if(fd == -1) { 
-        ERR("failed to open %s", path);
         return nullptr; 
     }
     if( flags & O_CREAT ) {
         if( ftruncate(fd, len) == -1 ) {
-            ERR("failed to ftruncate %s to %d bytes.", path, len);
             ::close(fd);
             return nullptr;
         }
     }
     if(!len) {
         if( fstat(fd, &st) == -1 ) {
-            ERR("failed to stat %s.", path);
             ::close(fd);
             return nullptr;
         }
@@ -64,7 +61,6 @@ void * pmem_map_file(const char * path, size_t len, int flags, mode_t mode, size
     *mapped_lenp = p ? len : 0;
     *is_pmemp = 0;
     if(p == MAP_FAILED) {
-        ERR("mmap failed. fd=%d len=%d path=%s", fd, len, path);
         return nullptr;
     }
     ::close(fd);

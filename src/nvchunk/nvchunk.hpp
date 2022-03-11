@@ -18,7 +18,6 @@
 #include <iostream>
 #include <random>
 #include "cpmem.hpp"
-#include "flog.hpp"
 
 namespace NVCHUNK {
 
@@ -86,10 +85,6 @@ inline std::string uuid() {
 }
 
 using std::string;
-using FLOG::LOG;
-using FLOG::ERROR;
-using FLOG::INFO;
-using FLOG::WARN;
 
 /**
  * @brief an nv_dev object represents a mapped NVM device
@@ -404,7 +399,6 @@ public:
             pc = new nvchunk(name, dev, off, size);
         }
         catch (nv_exception & e) {
-            LOG(ERROR) << e.what() << std::endl;
             return nullptr;
         }
         mChunks.push_back(pc);
@@ -554,7 +548,6 @@ inline nv_dev* nv_dev::open(const string & name, size_t size)
         }
     }
     catch (nv_exception & e) {
-        LOG(ERROR) << e.what() << std::endl;
         return nullptr;
     }
     return pDev;

@@ -4,11 +4,16 @@
 #include "gtest/gtest.h"
 #include <fstream>
 #include <sstream>
+#include "flog.hpp"
 
 using namespace std;
 using namespace NVCHUNK;
 
 #define PMEM_MNTPT "/pmem/"
+
+using FLOG::INFO;
+using FLOG::WARN;
+using FLOG::ERROR;
 
 struct nvchunkTest : public testing::Test {
     ofstream ofs;
