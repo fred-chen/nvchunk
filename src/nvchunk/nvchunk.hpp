@@ -493,10 +493,10 @@ public:
         }
     }
 
-    int nchunks() {
+    size_t nchunks() {
         return mChunks.size();
     }
-    int ndevs() {
+    size_t ndevs() {
         return mDevs.size();
     }
 

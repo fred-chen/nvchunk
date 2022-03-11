@@ -4,7 +4,6 @@ execute_process(COMMAND uname "-s"
     RESULTS_VARIABLE CMAKE_OS_TYPE
 )
 
-include_directories("googletest/googletest/include/")
 include_directories("flog/src/include")
 
 project(nvchunk C CXX)
@@ -26,7 +25,6 @@ if( ${CMAKE_BUILD_TYPE} STREQUAL Coverage )
         "${CMAKE_C_FLAGS_DEBUG} -fprofile-arcs -ftest-coverage")
 endif()
 
-add_subdirectory(googletest)
 add_subdirectory(flog)
 
 include(CTest)

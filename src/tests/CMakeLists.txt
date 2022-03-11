@@ -3,9 +3,8 @@ add_executable(nvchunk_test nvchunk_test.cpp)   # 编译主文件
 
 IF(NOT HAVE_LIBPMEM_H)
 MESSAGE( STATUS "NO LIBPMEM" )
-target_link_libraries(nvchunk_test gtest)       # 主文件要依赖于 gtest.a 库
 ELSE()
-target_link_libraries(nvchunk_test gtest pmem)
+target_link_libraries(nvchunk_test pmem)
 ENDIF()
 
 add_custom_command(
