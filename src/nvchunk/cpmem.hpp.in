@@ -6,8 +6,7 @@
  * @desc cross platform pmem functions
  */
 
-#include <sys/mman.h>       // no PMDK
-// #include "public.hpp"
+#include <sys/mman.h>
 
 #cmakedefine HAVE_LIBPMEM_H
 
@@ -73,5 +72,8 @@ void * pmem_map_file(const char * path, size_t len, int flags, mode_t mode, size
 }
 int pmem_unmap(void * addr, size_t len) {
     return ::munmap(addr, len);
+}
+void *pmem_memset(void *pmemdest, int c, size_t len, unsigned flags) {
+    return ::memset(pmemdest, c, len);
 }
 #endif // HAVE_LIBPMEM_H

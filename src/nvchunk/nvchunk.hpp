@@ -129,6 +129,10 @@ public:
         return retest ? pmem_is_pmem(mVA, mSize) : mIsPmem;
     }
 
+    void zero() {
+        ::pmem_memset(mVA, 0, mSize, 0);
+    }
+
 };
 
 /**

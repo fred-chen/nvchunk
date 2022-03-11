@@ -2,3 +2,4 @@
 **/*.udb
 **/config.h
 **/config.hpp
+src/nvchunk/cpmem.hpp
