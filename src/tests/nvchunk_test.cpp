@@ -248,8 +248,12 @@ TEST_CASE("nvchunkTest6", "[NVM]") {
     auto chars2 = pc2->getmapper<char>();
     REQUIRE('F' == chars2[30]);
     REQUIRE('F' == (char)(((char*)pc2->_pDev->va())[32]));
+    pc->zero();
+    REQUIRE(0 == *((char*)pc2->va()+30));
     chars[pc->size()-1] = 'R';
     REQUIRE('R' == (char)(((char*)pc->_pDev->va())[pc->_pDev->size()-1]));
+    pc->zero(&((char*)pc->_pDev->va())[pc->_pDev->size()-1], 1);
+    REQUIRE(0 == (char)(((char*)pc->_pDev->va())[pc->_pDev->size()-1]));
 
     /* unmapping a chunk */
     size_t count = NVM::instance().nchunks();

@@ -127,6 +127,9 @@ public:
     void zero() {
         ::pmem_memset(mVA, 0, mSize, 0);
     }
+    void zero(void* addr, size_t size) {
+        ::pmem_memset(addr, 0, size, 0);
+    }
 
 };
 
@@ -287,6 +290,13 @@ public:
         if(!mSize) {
             mSize = _pDev->size();
         }
+    }
+
+    void zero() {
+        _pDev->zero();
+    }
+    void zero(void* addr, size_t size) {
+        _pDev->zero(addr, size);
     }
 
     template <typename T>
