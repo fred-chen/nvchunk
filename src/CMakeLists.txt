@@ -7,4 +7,3 @@ include_directories("nvchunk")
 
 add_subdirectory(nvchunk)
 add_subdirectory(tests)
-
