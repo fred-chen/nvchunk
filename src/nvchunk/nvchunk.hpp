@@ -106,7 +106,7 @@ public:
     const string & name () const { return mName; }
     void*          va   () const { return mVA;   }
 
-    static nv_dev* open(const string & name, size_t size);
+    static nv_dev* open(const string & name, size_t size = 0, bool create = false);
     virtual bool close() = 0;
 
     nv_dev(string name = "", size_t size=0) 
@@ -149,12 +149,16 @@ public:
      * @param name the path to nvm device file
      * @param size size of the backing file for creation
      */
-    nv_filedev(string path, size_t size=0) : nv_dev(path, size)
+    nv_filedev(string path, size_t size=0, bool create=false) : nv_dev(path, size)
     {
         struct stat st;
-        size_t mapped_len = 0;
-        int    is_pmem = 0;
-        int    flags = 0;
+        size_t mapped_len   = 0;
+        int    is_pmem      = 0;
+        int    flags        = 0;
+
+        if (create && size <= 0) {
+            throw nv_exception("creating file with zero size.");
+        }
 
         if( stat(mName.c_str(), &st) != 0 ) {
             /* backing file doesn't not exist, create and map with given size */
@@ -165,9 +169,18 @@ public:
             mSize = size;
         }
         else {
-            /* backing file exists, map whole file size */
-            mSize = st.st_size;
-            size  = 0;
+            if (create) {
+                /* backing file exists, apply new size if create */
+                if ( ::truncate (mName.c_str(), size) != 0 ) {
+                    throw nv_exception( std::string("failed to apply new size to file .") + mName );
+                }
+                mSize = size;
+            }
+            else {
+                /* backing file exists, just map the whole file if no create */
+                mSize = st.st_size;
+                size  = 0;   // zero size for while file mmapping
+            }
         }
 
         if((mVA = (void*)pmem_map_file(mName.c_str(), size, flags, 0666, &mapped_len, &is_pmem)) == nullptr) {
@@ -537,7 +550,7 @@ public:
  * 
  * @return a pointer to an nv_dev object, nullptr if fail to open
  */
-inline nv_dev* nv_dev::open(const string & name, size_t size)
+inline nv_dev* nv_dev::open(const string & name, size_t size, bool create)
 {
     nv_dev* pDev;
     
@@ -554,7 +567,7 @@ inline nv_dev* nv_dev::open(const string & name, size_t size)
              *   S_ISBLK(st_buf.st_mode) block device (nvme ssd)
              *   S_ISREG(st_buf.st_mode) file on a fsdax file system or a regular file system
              */
-            pDev = new nv_filedev(name, size);
+            pDev = new nv_filedev(name, size, create);
         }
     }
     catch (nv_exception & e) {

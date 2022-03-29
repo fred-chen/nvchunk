@@ -130,6 +130,26 @@ TEST_CASE("nvchunkTest2", "[nv_filedev]") {
     REQUIRE(dev->va());
     REQUIRE(dev->size() == MB * 10);
     delete dev;
+
+    /* open existing file with bigger size (file extended) */
+    struct stat st;
+    dev = new nv_filedev(path, MB * 12, true);
+    REQUIRE(dev);
+    REQUIRE(dev->va());
+    REQUIRE(dev->size() == MB * 12);
+    stat(path.c_str(), &st);
+    REQUIRE(st.st_size == MB * 12);
+    delete dev;
+
+    /* open existing file with smaller size (file truncated) */
+    dev = new nv_filedev(path, MB * 3, true);
+    REQUIRE(dev);
+    REQUIRE(dev->va());
+    REQUIRE(dev->size() == MB * 3);
+    stat(path.c_str(), &st);
+    REQUIRE(st.st_size == MB * 3);
+    delete dev;
+
     unlink(path.c_str());
 }
 
